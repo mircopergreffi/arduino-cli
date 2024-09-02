@@ -1,0 +1,25 @@
+name: Build New Release
+on:
+  release:
+    types: [ "published" ]
+jobs:
+  build_and_push:
+    name: Build and push to dockerhub
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - run: |
+          VERSION=${{github.event.release.tag_name}}
+          VERSION=${VERSION:1}
+          docker buildx create --name container --driver docker-container
+          docker buildx build --tag mircopergreffi/arduino-cli:${VERSION} --platform linux/amd64,linux/arm/v5,linux/arm/v7,linux/arm64/v8,linux/386,linux/mips64le,linux/ppc64le,linux/s390x --builder container --push .
